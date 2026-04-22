@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Medicaid Expenditure Forecast 2026-2035</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0;}
+  body{font-family:'Segoe UI',Arial,sans-serif;background:#f4f6fa;color:#222;}
+  header{background:linear-gradient(135deg,#1565c0,#0d47a1);color:#fff;padding:28px 36px;}
+  header h1{font-size:1.7rem;font-weight:700;}
+  header p{margin-top:6px;opacity:0.85;font-size:0.95rem;}
+  .container{max-width:1180px;margin:0 auto;padding:28px 24px;}
+  .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap;}
+  .tab-btn{padding:9px 22px;border:none;border-radius:6px;cursor:pointer;
+    font-size:0.95rem;font-weight:600;background:#e3eaf6;color:#1565c0;transition:all .2s;}
+  .tab-btn.active{background:#1565c0;color:#fff;}
+  .tab-btn:hover:not(.active){background:#c5d8f5;}
+  .tab-panel{display:none;}
+  .tab-panel.active{display:block;}
+  .card{background:#fff;border-radius:10px;box-shadow:0 2px 12px rgba(0,0,0,.08);
+    padding:24px;margin-bottom:24px;}
+  .card h2{font-size:1.1rem;color:#1565c0;margin-bottom:16px;
+    border-bottom:2px solid #e3eaf6;padding-bottom:8px;}
+  .chart-wrap{position:relative;height:380px;}
+  .subtabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;}
+  .subtab-btn{padding:6px 16px;border:1px solid #c5d8f5;border-radius:20px;
+    cursor:pointer;font-size:0.87rem;background:#f0f5ff;color:#1565c0;}
+  .subtab-btn.active{background:#1565c0;color:#fff;border-color:#1565c0;}
+  table{width:100%;border-collapse:collapse;font-size:0.9rem;}
+  th{background:#1565c0;color:#fff;padding:9px 12px;text-align:left;}
+  td{padding:8px 12px;border-bottom:1px solid #eee;}
+  tr:hover td{background:#f0f5ff;}
+  .grid-2{display:grid;grid-template-columns:1fr 1fr;gap:20px;}
+  .badge{display:inline-block;padding:2px 10px;border-radius:12px;
+    font-size:0.8rem;font-weight:700;background:#e8f5e9;color:#2e7d32;}
+  footer{text-align:center;padding:20px;color:#888;font-size:0.82rem;}
+  @media(max-width:700px){.grid-2{grid-template-columns:1fr;}}
+</style>
+</head>
+<body>
+<header>
+  <h1>Medicaid Expenditure Projection Model</h1>
+  <p>Historical Analysis (FY 2013-2025) and 10-Year Forecast (2026-2035)
+     | National and New York State | Author: Asmita Thapa</p>
+</header>
+
+<div class="container">
+  <div class="tabs">
+    <button class="tab-btn active" onclick="switchTab('national',this)">National</button>
+    <button class="tab-btn"        onclick="switchTab('newyork',this)">New York State</button>
+    <button class="tab-btn"        onclick="switchTab('compare',this)">Model Comparison</button>
+    <button class="tab-btn"        onclick="switchTab('tables',this)">Forecast Tables</button>
+  </div>
+
+  <div id="tab-national" class="tab-panel active">
+    <div class="card">
+      <h2>National Medicaid Expenditure - Best Model Forecast
+        <span class="badge">ARIMA(1,1,1)</span></h2>
+      <div class="chart-wrap"><canvas id="natBestChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>National - All Models Comparison</h2>
+      <div class="subtabs">
+        <button class="subtab-btn active" onclick="toggleNat('all',this)">All Models</button>
+        <button class="subtab-btn" onclick="toggleNat('linear',this)">Linear</button>
+        <button class="subtab-btn" onclick="toggleNat('poly',this)">Polynomial</button>
+        <button class="subtab-btn" onclick="toggleNat('holt',this)">Holt's</button>
+        <button class="subtab-btn" onclick="toggleNat('arima',this)">ARIMA</button>
+      </div>
+      <div class="chart-wrap"><canvas id="natAllChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="tab-newyork" class="tab-panel">
+    <div class="card">
+      <h2>New York State Medicaid Expenditure - Best Model Forecast
+        <span class="badge">Linear Regression</span></h2>
+      <div class="chart-wrap"><canvas id="nyBestChart"></canvas></div>
+    </div>
+    <div class="card">
+      <h2>New York - All Models Comparison</h2>
+      <div class="subtabs">
+        <button class="subtab-btn active" onclick="toggleNy('all',this)">All Models</button>
+        <button class="subtab-btn" onclick="toggleNy('linear',this)">Linear</button>
+        <button class="subtab-btn" onclick="toggleNy('poly',this)">Polynomial</button>
+        <button class="subtab-btn" onclick="toggleNy('holt',this)">Holt's</button>
+        <button class="subtab-btn" onclick="toggleNy('arima',this)">ARIMA</button>
+      </div>
+      <div class="chart-wrap"><canvas id="nyAllChart"></canvas></div>
+    </div>
+  </div>
+
+  <div id="tab-compare" class="tab-panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2>National - Model Performance (Test: FY 2022-2025)</h2>
+        <table>
+          <thead><tr><th>Rank</th><th>Model</th>
+            <th>MAE</th><th>RMSE</th><th>MAPE</th></tr></thead>
+          <tbody><tr style="font-weight:700;background:#fffde7;"><td>1</td><td>ARIMA(1,1,1)</td><td>$33.74B</td><td>$35.51B</td><td>3.6%</td></tr><tr><td>2</td><td>Holt's Exponential Smoothing</td><td>$107.64B</td><td>$113.84B</td><td>11.4%</td></tr><tr><td>3</td><td>Polynomial Regression (d=2)</td><td>$120.44B</td><td>$126.09B</td><td>12.8%</td></tr><tr><td>4</td><td>Linear Regression</td><td>$129.85B</td><td>$136.18B</td><td>13.8%</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>New York - Model Performance (Test: FY 2022-2025)</h2>
+        <table>
+          <thead><tr><th>Rank</th><th>Model</th>
+            <th>MAE</th><th>RMSE</th><th>MAPE</th></tr></thead>
+          <tbody><tr style="font-weight:700;background:#fffde7;"><td>1</td><td>Linear Regression</td><td>$13.00B</td><td>$13.90B</td><td>13.4%</td></tr><tr><td>2</td><td>Holt's Exponential Smoothing</td><td>$20.66B</td><td>$21.76B</td><td>21.4%</td></tr><tr><td>3</td><td>ARIMA(1,1,1)</td><td>$22.05B</td><td>$23.19B</td><td>22.8%</td></tr><tr><td>4</td><td>Polynomial Regression (d=2)</td><td>$29.88B</td><td>$31.92B</td><td>30.8%</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+    <div class="card">
+      <h2>Methodology Notes</h2>
+      <p style="line-height:1.8;font-size:0.93rem;">
+        <strong>Train/Test Split:</strong> Models trained on FY 2013-2021,
+        evaluated on FY 2022-2025.<br>
+        <strong>Linear Regression:</strong> OLS on Year. Prediction intervals
+        widen using t-distribution leverage formula.<br>
+        <strong>Polynomial Regression (d=2):</strong> Quadratic OLS.<br>
+        <strong>Holt's Exponential Smoothing:</strong> Level and trend parameters
+        optimised by minimising SSE. CI widens as sqrt(h).<br>
+        <strong>ARIMA(1,1,1):</strong> AR and MA parameters estimated by
+        conditional least squares on first differences.<br>
+        <strong>Best model</strong> selected by lowest MAPE on hold-out test set.
+      </p>
+    </div>
+  </div>
+
+  <div id="tab-tables" class="tab-panel">
+    <div class="grid-2">
+      <div class="card">
+        <h2>National Forecast 2026-2035
+          <span class="badge">ARIMA(1,1,1)</span></h2>
+        <table>
+          <thead><tr><th>Year</th><th>Forecast</th>
+            <th>Lower 95% CI</th><th>Upper 95% CI</th></tr></thead>
+          <tbody><tr><td>2026</td><td>$1112.55B</td><td>$1055.87B</td><td>$1169.24B</td></tr><tr><td>2027</td><td>$1192.59B</td><td>$1112.43B</td><td>$1272.75B</td></tr><tr><td>2028</td><td>$1271.83B</td><td>$1173.65B</td><td>$1370.01B</td></tr><tr><td>2029</td><td>$1350.27B</td><td>$1236.90B</td><td>$1463.64B</td></tr><tr><td>2030</td><td>$1427.93B</td><td>$1301.18B</td><td>$1554.68B</td></tr><tr><td>2031</td><td>$1504.82B</td><td>$1365.97B</td><td>$1643.67B</td></tr><tr><td>2032</td><td>$1580.93B</td><td>$1430.96B</td><td>$1730.91B</td></tr><tr><td>2033</td><td>$1656.29B</td><td>$1495.96B</td><td>$1816.62B</td></tr><tr><td>2034</td><td>$1730.89B</td><td>$1560.84B</td><td>$1900.94B</td></tr><tr><td>2035</td><td>$1804.74B</td><td>$1625.49B</td><td>$1984.00B</td></tr></tbody>
+        </table>
+      </div>
+      <div class="card">
+        <h2>New York Forecast 2026-2035
+          <span class="badge">Linear Regression</span></h2>
+        <table>
+          <thead><tr><th>Year</th><th>Forecast</th>
+            <th>Lower 95% CI</th><th>Upper 95% CI</th></tr></thead>
+          <tbody><tr><td>2026</td><td>$87.61B</td><td>$61.27B</td><td>$113.95B</td></tr><tr><td>2027</td><td>$90.05B</td><td>$62.06B</td><td>$118.03B</td></tr><tr><td>2028</td><td>$92.49B</td><td>$62.79B</td><td>$122.18B</td></tr><tr><td>2029</td><td>$94.93B</td><td>$63.47B</td><td>$126.39B</td></tr><tr><td>2030</td><td>$97.37B</td><td>$64.09B</td><td>$130.65B</td></tr><tr><td>2031</td><td>$99.81B</td><td>$64.68B</td><td>$134.94B</td></tr><tr><td>2032</td><td>$102.25B</td><td>$65.23B</td><td>$139.27B</td></tr><tr><td>2033</td><td>$104.69B</td><td>$65.75B</td><td>$143.63B</td></tr><tr><td>2034</td><td>$107.13B</td><td>$66.25B</td><td>$148.01B</td></tr><tr><td>2035</td><td>$109.57B</td><td>$66.72B</td><td>$152.42B</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer>Medicaid Expenditure Projection Model | FY 2013-2025 |
+  Models: Linear, Polynomial, Holt's, ARIMA(1,1,1) | Author: Asmita Thapa</footer>
+
+<script>
+const natHist    = [{"x": 2013, "y": 453.083}, {"x": 2014, "y": 488.24}, {"x": 2015, "y": 548.191}, {"x": 2016, "y": 571.23}, {"x": 2017, "y": 596.434}, {"x": 2018, "y": 611.977}, {"x": 2019, "y": 614.909}, {"x": 2020, "y": 678.893}, {"x": 2021, "y": 740.286}, {"x": 2022, "y": 823.865}, {"x": 2023, "y": 893.144}, {"x": 2024, "y": 948.847}, {"x": 2025, "y": 1031.705}];
+const nyHist     = [{"x": 2013, "y": 54.193}, {"x": 2014, "y": 53.916}, {"x": 2015, "y": 59.681}, {"x": 2016, "y": 62.91}, {"x": 2017, "y": 78.563}, {"x": 2018, "y": 75.263}, {"x": 2019, "y": 60.209}, {"x": 2020, "y": 72.816}, {"x": 2021, "y": 73.268}, {"x": 2022, "y": 82.565}, {"x": 2023, "y": 94.602}, {"x": 2024, "y": 98.178}, {"x": 2025, "y": 102.699}];
+const natLinFc   = [{"x": 2026, "y": 873.492}, {"x": 2027, "y": 905.074}, {"x": 2028, "y": 936.657}, {"x": 2029, "y": 968.239}, {"x": 2030, "y": 999.822}, {"x": 2031, "y": 1031.404}, {"x": 2032, "y": 1062.987}, {"x": 2033, "y": 1094.569}, {"x": 2034, "y": 1126.152}, {"x": 2035, "y": 1157.735}];
+const natPolyFc  = [{"x": 2026, "y": 892.498}, {"x": 2027, "y": 928.938}, {"x": 2028, "y": 965.89}, {"x": 2029, "y": 1003.353}, {"x": 2030, "y": 1041.328}, {"x": 2031, "y": 1079.814}, {"x": 2032, "y": 1118.811}, {"x": 2033, "y": 1158.32}, {"x": 2034, "y": 1198.34}, {"x": 2035, "y": 1238.872}];
+const natHwFc    = [{"x": 2026, "y": 1044.025}, {"x": 2027, "y": 1079.196}, {"x": 2028, "y": 1114.367}, {"x": 2029, "y": 1149.538}, {"x": 2030, "y": 1184.709}, {"x": 2031, "y": 1219.88}, {"x": 2032, "y": 1255.051}, {"x": 2033, "y": 1290.222}, {"x": 2034, "y": 1325.393}, {"x": 2035, "y": 1360.565}];
+const natArFc    = [{"x": 2026, "y": 1112.551}, {"x": 2027, "y": 1192.59}, {"x": 2028, "y": 1271.827}, {"x": 2029, "y": 1350.273}, {"x": 2030, "y": 1427.934}, {"x": 2031, "y": 1504.818}, {"x": 2032, "y": 1580.934}, {"x": 2033, "y": 1656.288}, {"x": 2034, "y": 1730.889}, {"x": 2035, "y": 1804.744}];
+const natBestFc  = [{"x": 2026, "y": 1112.551}, {"x": 2027, "y": 1192.59}, {"x": 2028, "y": 1271.827}, {"x": 2029, "y": 1350.273}, {"x": 2030, "y": 1427.934}, {"x": 2031, "y": 1504.818}, {"x": 2032, "y": 1580.934}, {"x": 2033, "y": 1656.288}, {"x": 2034, "y": 1730.889}, {"x": 2035, "y": 1804.744}];
+const natBestCI  = [{"x": 2026, "lo": 1055.867, "hi": 1169.236}, {"x": 2027, "lo": 1112.425, "hi": 1272.754}, {"x": 2028, "lo": 1173.647, "hi": 1370.008}, {"x": 2029, "lo": 1236.904, "hi": 1463.642}, {"x": 2030, "lo": 1301.183, "hi": 1554.684}, {"x": 2031, "lo": 1365.97, "hi": 1643.667}, {"x": 2032, "lo": 1430.961, "hi": 1730.907}, {"x": 2033, "lo": 1495.96, "hi": 1816.616}, {"x": 2034, "lo": 1560.836, "hi": 1900.943}, {"x": 2035, "lo": 1625.492, "hi": 1983.996}];
+const nyLinFc    = [{"x": 2026, "y": 87.608}, {"x": 2027, "y": 90.048}, {"x": 2028, "y": 92.488}, {"x": 2029, "y": 94.929}, {"x": 2030, "y": 97.369}, {"x": 2031, "y": 99.809}, {"x": 2032, "y": 102.249}, {"x": 2033, "y": 104.689}, {"x": 2034, "y": 107.129}, {"x": 2035, "y": 109.57}];
+const nyPolyFc   = [{"x": 2026, "y": 53.556}, {"x": 2027, "y": 47.292}, {"x": 2028, "y": 40.113}, {"x": 2029, "y": 32.017}, {"x": 2030, "y": 23.004}, {"x": 2031, "y": 13.076}, {"x": 2032, "y": 2.231}, {"x": 2033, "y": -9.53}, {"x": 2034, "y": -22.207}, {"x": 2035, "y": -35.8}];
+const nyHwFc     = [{"x": 2026, "y": 102.453}, {"x": 2027, "y": 104.316}, {"x": 2028, "y": 106.179}, {"x": 2029, "y": 108.042}, {"x": 2030, "y": 109.905}, {"x": 2031, "y": 111.768}, {"x": 2032, "y": 113.631}, {"x": 2033, "y": 115.494}, {"x": 2034, "y": 117.357}, {"x": 2035, "y": 119.22}];
+const nyArFc     = [{"x": 2026, "y": 102.092}, {"x": 2027, "y": 102.58}, {"x": 2028, "y": 102.188}, {"x": 2029, "y": 102.502}, {"x": 2030, "y": 102.25}, {"x": 2031, "y": 102.453}, {"x": 2032, "y": 102.29}, {"x": 2033, "y": 102.42}, {"x": 2034, "y": 102.315}, {"x": 2035, "y": 102.4}];
+const nyBestFc   = [{"x": 2026, "y": 87.608}, {"x": 2027, "y": 90.048}, {"x": 2028, "y": 92.488}, {"x": 2029, "y": 94.929}, {"x": 2030, "y": 97.369}, {"x": 2031, "y": 99.809}, {"x": 2032, "y": 102.249}, {"x": 2033, "y": 104.689}, {"x": 2034, "y": 107.129}, {"x": 2035, "y": 109.57}];
+const nyBestCI   = [{"x": 2026, "lo": 61.266, "hi": 113.95}, {"x": 2027, "lo": 62.063, "hi": 118.033}, {"x": 2028, "lo": 62.792, "hi": 122.184}, {"x": 2029, "lo": 63.465, "hi": 126.392}, {"x": 2030, "lo": 64.091, "hi": 130.647}, {"x": 2031, "lo": 64.676, "hi": 134.941}, {"x": 2032, "lo": 65.228, "hi": 139.27}, {"x": 2033, "lo": 65.75, "hi": 143.628}, {"x": 2034, "lo": 66.248, "hi": 148.011}, {"x": 2035, "lo": 66.724, "hi": 152.415}];
+
+function mkDS(label, pts, color, dash) {
+  return {
+    label,
+    data: pts,
+    borderColor: color,
+    backgroundColor: color,
+    borderWidth: 2.2,
+    borderDash: dash || [],
+    pointRadius: 5,
+    tension: 0.25
+  };
+}
+
+function mkCI(pts, color) {
+  return [
+    { label:'Upper CI',
+       data: pts.map(p => ({x:p.x, y:p.hi})),
+       borderColor:'transparent',
+       backgroundColor: color+'28',
+       borderWidth:0, pointRadius:0,
+       fill:'+1', tension:0.25 },
+    { label:'Lower CI',
+       data: pts.map(p => ({x:p.x, y:p.lo})),
+       borderColor:'transparent',
+       backgroundColor: color+'28',
+       borderWidth:0, pointRadius:0,
+       fill:false, tension:0.25 }
+  ];
+}
+
+const OPT = {
+  responsive:true,
+  maintainAspectRatio:false,
+  interaction:{mode:'index', intersect:false},
+  plugins:{
+    legend:{position:'top'},
+    tooltip:{callbacks:{
+      label: ctx => ` ${ctx.dataset.label}: $${ctx.parsed.y.toFixed(2)}B`
+    }}
+  },
+  scales:{
+    x:{ type:'linear',
+         title:{display:true, text:'Fiscal Year'},
+         ticks:{callback: v => v.toFixed(0), stepSize:2} },
+    y:{ title:{display:true, text:'Expenditure (Billions USD)'},
+         ticks:{callback: v => '$'+v+'B'} }
+  }
+};
+
+new Chart(document.getElementById('natBestChart'), {
+  type:'line',
+  data:{ datasets:[
+    mkDS('Historical', natHist, '#1f77b4', []),
+    mkDS('Forecast (ARIMA(1,1,1))', natBestFc, '#ff7f0e', [6,3]),
+    ...mkCI(natBestCI, '#ff7f0e')
+  ]},
+  options: OPT
+});
+
+new Chart(document.getElementById('nyBestChart'), {
+  type:'line',
+  data:{ datasets:[
+    mkDS('Historical', nyHist, '#d62728', []),
+    mkDS('Forecast (Linear Regression)', nyBestFc, '#ff7f0e', [6,3]),
+    ...mkCI(nyBestCI, '#ff7f0e')
+  ]},
+  options: OPT
+});
+
+const natAllChart = new Chart(document.getElementById('natAllChart'), {
+  type:'line',
+  data:{ datasets:[
+    mkDS('Historical',       natHist,   '#1f77b4', []),
+    mkDS('Linear',           natLinFc,  '#ff7f0e', [5,3]),
+    mkDS('Polynomial (d=2)', natPolyFc, '#2ca02c', [5,3]),
+    mkDS("Holt's",           natHwFc,   '#9467bd', [5,3]),
+    mkDS('ARIMA(1,1,1)',      natArFc,   '#8c564b', [5,3]),
+  ]},
+  options: OPT
+});
+
+const nyAllChart = new Chart(document.getElementById('nyAllChart'), {
+  type:'line',
+  data:{ datasets:[
+    mkDS('Historical',       nyHist,   '#d62728', []),
+    mkDS('Linear',           nyLinFc,  '#ff7f0e', [5,3]),
+    mkDS('Polynomial (d=2)', nyPolyFc, '#2ca02c', [5,3]),
+    mkDS("Holt's",           nyHwFc,   '#9467bd', [5,3]),
+    mkDS('ARIMA(1,1,1)',      nyArFc,   '#8c564b', [5,3]),
+  ]},
+  options: OPT
+});
+
+function switchTab(id, btn) {
+  document.querySelectorAll('.tab-panel')
+    .forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn')
+    .forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-'+id).classList.add('active');
+  btn.classList.add('active');
+}
+
+function toggleNat(which, btn) {
+  document.querySelectorAll('#tab-national .subtab-btn')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const keys = ['linear','poly','holt','arima'];
+  natAllChart.data.datasets.forEach((ds, i) => {
+    if (i === 0) { ds.hidden = false; return; }
+    ds.hidden = !(which === 'all' || which === keys[i-1]);
+  });
+  natAllChart.update();
+}
+
+function toggleNy(which, btn) {
+  document.querySelectorAll('#tab-newyork .subtab-btn')
+    .forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const keys = ['linear','poly','holt','arima'];
+  nyAllChart.data.datasets.forEach((ds, i) => {
+    if (i === 0) { ds.hidden = false; return; }
+    ds.hidden = !(which === 'all' || which === keys[i-1]);
+  });
+  nyAllChart.update();
+}
+</script>
+</body>
+</html>
